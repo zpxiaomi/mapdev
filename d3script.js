@@ -150,11 +150,15 @@ map.beforeRender(function(map, frameState){
 });
 
 var simulationData;
-$.getJSON("gpsTrack.json", function(data){
-   simulationData = data.data;
-});
+//$.getJSON("gpsTrack.json", function(data){
+//   simulationData = data.data;
+//});
+
 var simulationBtn = document.getElementById('live-tracking');
 simulationBtn.addEventListener('click', function(){
+  if(coordArray){
+  simulationData = coordArray;
+  }
   var coordinates = simulationData;
   var firstCoord = coordinates.shift();
   setMarkerPosition(firstCoord);
@@ -188,6 +192,13 @@ function render() {
   map.render();
 }
 
+//add button for finishing data collection
+var finish = document.getElementById('fiDataCol');
+
+finish.addEventListener('click', function(){
+  finish.disabled = true;
+  collectData.checked= false;
+});
 // add clicklisener to map for GPS data collection
 //create simulation data using points
 //map.on('singleclick', function(evt){
@@ -218,6 +229,7 @@ var vectorLayer = new ol.layer.Vector({
 });
 map.addLayer(vectorLayer);
 var drawAndCollect;
+var coordArray = [];
 function addDrawAndCollect(){
   drawAndCollect = new ol.interaction.Draw({
      source: vectorSource,
@@ -227,6 +239,11 @@ function addDrawAndCollect(){
    var coordinate  = evt.feature.getGeometry().getCoordinates();
    var projectedCoord = ol.proj.transform(coordinate, 'EPSG:3857', 'EPSG:4326');
    console.log(projectedCoord);
+   var newObj = {"coords":
+    {"latitude": projectedCoord[1],
+     "longitude": projectedCoord[0],
+    }, "timestamp": Date.now()};
+   coordArray.push(newObj);
   });
   map.addInteraction(drawAndCollect);
 }
@@ -237,9 +254,24 @@ if(collectData.checked == true){
 collectData.onchange = function(){
   if(collectData.checked == true){
     addDrawAndCollect();
+    document.getElementById('fiDataCol').disabled = false;
   } else{
     map.removeInteraction(drawAndCollect);
-  }
-
-  
+    document.getElementById('fiDataCol').disabled = true;
+  }  
 }
+// text for collected coordinates form a piece of Object data in the form of data-(coord, timestamp)...
+function createCoordData(){
+  var coordinates = [];
+  var simulationData = {
+      data: coordinates
+  };
+  var array = arguments[0];
+  for(var i=0; i<array.length; i++){
+    if(i<array.length-1){
+        coordinates.push(array[i]);
+    }  
+  }
+  return simulationData;
+}
+
